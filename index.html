@@ -279,7 +279,7 @@
 
     <div class="form-actions">
       <button class="btn-submit" id="btn-submit" onclick="submitForm()" disabled>
-        Enviar respuestas
+        ¡Inscribirme!
       </button>
       <p class="hint">Al inscribirte, aceptas estar disponible jugar del 14 al 17 de mayo (sujeto a cambios)</p>
     </div>
@@ -547,7 +547,7 @@ function showSuccess() {
   document.getElementById('form-screen').style.display = 'none';
   document.getElementById('success-screen').style.display = 'flex';
   document.getElementById('success-msg').textContent =
-    `Gracias, ${currentUser}. Tus respuestas fueron guardadas correctamente.`;
+    `Gracias, ${currentUser}. Tu inscripción fue enviada correctamente.`;
 
   const list = document.getElementById('summary-list');
   list.innerHTML = PREGUNTAS.map((q, i) => `
