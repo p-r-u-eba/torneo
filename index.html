@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Formulario de Evaluación</title>
+<title>Inscripción</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
 
@@ -244,13 +244,13 @@
   <!-- ── LOGIN ── -->
   <div id="login-screen">
     <div class="brand">
-      <h1>Formulario de Evaluación</h1>
+      <h1>Inscripción al torneo</h1>
       <p>Ingresa tu nombre o ID para comenzar</p>
     </div>
     <div class="login-card">
       <div>
         <label for="username-input">Tu nombre o ID</label>
-        <input type="text" id="username-input" placeholder="Ej. Juan García" autocomplete="off" />
+        <input type="text" id="username-input" placeholder="AFL-Crisol Magic" autocomplete="off" />
       </div>
       <button class="btn-primary" onclick="startForm()">Comenzar →</button>
     </div>
@@ -263,7 +263,7 @@
     </div>
 
     <div class="form-header">
-      <h2>Responde las preguntas</h2>
+      <h2>Escoge tus equipos</h2>
       <div class="user-badge">👤 <span id="display-name"></span></div>
     </div>
 
@@ -281,7 +281,7 @@
       <button class="btn-submit" id="btn-submit" onclick="submitForm()" disabled>
         Enviar respuestas
       </button>
-      <p class="hint">Selecciona 3 opciones por pregunta · No puedes repetir una opción entre preguntas</p>
+      <p class="hint">Al inscribirte, aceptas estar disponible jugar del 14 al 17 de mayo (sujeto a cambios)</p>
     </div>
   </div>
 
@@ -306,18 +306,18 @@
 const SHEETS_URL = "https://script.google.com/macros/s/AKfycbyJmQCLlJfqxn7s0TeciOhI5k6esVIVztVU9BxqHljieG9ss1mh9KHGdSORzvn55z2F/exec";   // ← pega aquí la URL de tu Apps Script
 
 const PREGUNTAS = [
-  "¿Cuál es tu principal fortaleza en el trabajo?",
-  "¿Qué habilidades deseas desarrollar más?",
-  "¿Qué valores consideras más importantes en un equipo?",
-  "¿Cómo prefieres comunicarte con tus compañeros?",
-  "¿Qué tipos de tarea te generan mayor satisfacción?"
+  "Equipo 1",
+  "Equipo 2",
+  "Equipo 3",
+  "Equipo 4",
+  "Equipo 5",
 ];
 
 const OPCIONES = [
-  "A – Liderazgo",          "B – Creatividad",           "C – Comunicación",
-  "D – Análisis",            "E – Trabajo en equipo",     "F – Adaptabilidad",
-  "G – Puntualidad",         "H – Resolución de problemas","I – Empatía",
-  "J – Organización",        "K – Proactividad",          "L – Confiabilidad",
+  "Andy Bogard",          "Ángel",           "Antonov",
+  "Ash Crimson",            "Athena Asamiya",     "B. Jenet",
+  "Benimaru Nikaido",         "Billy Kane",       "Blue Mary",
+  "Chizuru Kagura",        "Chris",          "Clark Still",
   "M – Innovación",          "N – Negociación",           "O – Paciencia",
   "P – Enfoque",             "Q – Iniciativa",            "R – Aprendizaje continuo",
   "S – Ética profesional",   "T – Responsabilidad",       "U – Escucha activa",
