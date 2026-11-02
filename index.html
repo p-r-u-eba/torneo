@@ -250,7 +250,7 @@
     <div class="login-card">
       <div>
         <label for="username-input">Nombre del equipo</label>
-        <input type="text" id="username-input" placeholder="Team AFL" autocomplete="off" />
+        <input type="text" id="username-input" placeholder="AFL-Crisol Magic" autocomplete="off" />
       </div>
       <div class="field-msg" id="login-msg"></div>
       <button class="btn-primary" id="btn-start" onclick="startForm()">Comenzar →</button>
@@ -306,7 +306,7 @@
 // ══════════════════════════════════════════════════════════
 //  ⚙️  CONFIGURACIÓN — edita solo esta sección
 // ══════════════════════════════════════════════════════════
-const SHEETS_URL = "https://script.googleusercontent.com/macros/echo?user_content_key=AUkAhnSc14Lo6VldwiF5WN_5NIl3MT54vInYKtmYwwU6oqiG3T-ttRdPkIHi_Y89sYExUiOCtT6_5VLjxLicuvh7jYKRMQNJaLkEHvHQ0RWYGZCmC3pb3dHd2IVnzHHQG53cBJ7geFecvwRxfUaqZiLiIxvgQjzsOSkfaxIBCCxeHSScmQDtqstRbFlesRDGwEsBtPbNIQkjaiEhfxBarfhubfRzGu9SK8P0C1CdX9cg42oTIU_Q7pQ&lib=Mm-titk05TAMX4NLbhmKQHFEEALZuIPDK";   // ← pega aquí la URL de tu Apps Script
+const SHEETS_URL = "https://script.google.com/macros/s/AKfycbySQG45TUYMC3xW_17C3HwCABNPqHAG1wWJKslMbAGCqpu9u1kwx79Bdw_mevrBrI-KDQ/exec";   // ← pega aquí la URL de tu Apps Script
 
 const MAX_EQUIPOS = 8;
 
@@ -329,7 +329,7 @@ const OPCIONES = [
 const SLOTS_POR_JUGADOR = 2;
 // ══════════════════════════════════════════════════════════
 
-const CONFIGURED = SHEETS_URL !== "https://script.google.com/macros/s/AKfycbySQG45TUYMC3xW_17C3HwCABNPqHAG1wWJKslMbAGCqpu9u1kwx79Bdw_mevrBrI-KDQ/exec";
+const CONFIGURED = SHEETS_URL !== "AQUI_TU_URL";
 
 let teamName = "";
 let registeredCount = 0;
@@ -356,7 +356,15 @@ function usedInTeam(excludeP, excludeS) {
 async function fetchStatus() {
   if (!CONFIGURED) return { count: 0, equipos: [] };
   const res = await fetch(SHEETS_URL + (SHEETS_URL.includes('?') ? '&' : '?') + 't=' + Date.now());
-  const data = await res.json();
+  const text = await res.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (e) {
+    console.warn('Respuesta del Apps Script:', text);
+    throw new Error('El script no devolvió JSON (¿acceso no es "Cualquier usuario" o falta publicar nueva versión?)');
+  }
+  if (data.error) throw new Error('Error del script: ' + data.error);
   return { count: Number(data.count) || 0, equipos: data.equipos || [] };
 }
 
@@ -387,7 +395,7 @@ async function loadStatus() {
     renderCupos();
   } catch (e) {
     console.warn('No se pudo consultar los cupos:', e);
-    document.getElementById('cupos-info').textContent = 'No se pudo verificar los cupos. Intenta de nuevo.';
+    document.getElementById('cupos-info').textContent = 'No se pudo verificar los cupos: ' + e.message;
   }
 }
 
@@ -410,7 +418,7 @@ async function startForm() {
     registeredTeams = s.equipos;
   } catch (e) {
     btn.disabled = false;
-    loginMsg('No se pudo verificar los cupos. Intenta de nuevo.');
+    loginMsg('No se pudo verificar los cupos: ' + e.message);
     return;
   }
   renderCupos();
