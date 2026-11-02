@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Inscripción</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+  @import url('https://script.google.com/macros/s/AKfycbySQG45TUYMC3xW_17C3HwCABNPqHAG1wWJKslMbAGCqpu9u1kwx79Bdw_mevrBrI-KDQ/exec');
 
   :root {
     --bg: #0f0e17;
@@ -58,13 +58,13 @@
     color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
     display: block; margin-bottom: 8px;
   }
-  .login-card input {
+  .login-card input, .question-card input[type="text"] {
     width: 100%; background: var(--surface2); border: 1.5px solid var(--border);
     border-radius: 10px; padding: 14px 18px; color: var(--text);
     font-family: 'DM Sans', sans-serif; font-size: 1rem; outline: none;
     transition: border-color .2s;
   }
-  .login-card input:focus { border-color: var(--accent); }
+  .login-card input:focus, .question-card input[type="text"]:focus { border-color: var(--accent); }
 
   .btn-primary {
     background: var(--accent); color: #0f0e17; border: none; border-radius: 10px;
@@ -236,7 +236,7 @@
 <body>
 <div id="sending-overlay">
   <div class="spinner"></div>
-  <p>Enviando respuestas…</p>
+  <p>Enviando inscripción…</p>
 </div>
 
 <div class="container">
@@ -245,14 +245,16 @@
   <div id="login-screen">
     <div class="brand">
       <h1>Inscripción al torneo</h1>
-      <p>Ingresa tu nombre o ID para comenzar</p>
+      <p>Ingresa el nombre de tu equipo para comenzar</p>
     </div>
     <div class="login-card">
       <div>
-        <label for="username-input">Tu nombre o ID</label>
+        <label for="username-input">Nombre del equipo</label>
         <input type="text" id="username-input" placeholder="AFL-Crisol Magic" autocomplete="off" />
       </div>
-      <button class="btn-primary" onclick="startForm()">Comenzar →</button>
+      <div class="field-msg" id="login-msg"></div>
+      <button class="btn-primary" id="btn-start" onclick="startForm()">Comenzar →</button>
+      <p class="hint" id="cupos-info">Verificando cupos…</p>
     </div>
   </div>
 
@@ -263,13 +265,13 @@
     </div>
 
     <div class="form-header">
-      <h2>Escoge tus equipos</h2>
-      <div class="user-badge">👤 <span id="display-name"></span></div>
+      <h2>Escoge tus personajes</h2>
+      <div class="user-badge">👥 <span id="display-name"></span></div>
     </div>
 
     <div class="progress-wrap">
       <div class="progress-label">
-        <span id="progress-text">0 de 5 completas</span>
+        <span id="progress-text">0 de 2 completas</span>
         <span id="progress-pct">0%</span>
       </div>
       <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
@@ -278,6 +280,7 @@
     <div id="questions-container"></div>
 
     <div class="form-actions">
+      <div class="field-msg" id="submit-msg"></div>
       <button class="btn-submit" id="btn-submit" onclick="submitForm()" disabled>
         ¡Inscribirme!
       </button>
@@ -291,10 +294,10 @@
     <h2>¡Enviado!</h2>
     <p id="success-msg"></p>
     <div class="summary-box">
-      <h3>Tus respuestas</h3>
+      <h3>Tu inscripción</h3>
       <div id="summary-list"></div>
     </div>
-    <button class="btn-reset" onclick="resetAll()">← Nuevo usuario</button>
+    <button class="btn-reset" onclick="resetAll()">← Nuevo equipo</button>
   </div>
 
 </div>
@@ -305,187 +308,233 @@
 // ══════════════════════════════════════════════════════════
 const SHEETS_URL = "https://script.google.com/macros/s/AKfycbyJmQCLlJfqxn7s0TeciOhI5k6esVIVztVU9BxqHljieG9ss1mh9KHGdSORzvn55z2F/exec";   // ← pega aquí la URL de tu Apps Script
 
-const PREGUNTAS = [
-  "Equipo 1",
-  "Equipo 2",
-  "Equipo 3",
-  "Equipo 4",
-  "Equipo 5",
-];
+const MAX_EQUIPOS = 8;
+
+const JUGADORES = ["Jugador 1", "Jugador 2"];
 
 const OPCIONES = [
-  "Andy Bogard",          "Ángel",           "Antonov",
-  "Ash Crimson",            "Athena Asamiya",     "B. Jenet",
-  "Benimaru Nikaido",         "Billy Kane",       "Blue Mary",
-  "Chizuru Kagura",        "Chris",          "Clark Still",
-  "Darli Dagger",          "Dolores",           "Duo Lon",
-  "Elisabeth Blanctorche",            "Gato",     "Geese Howard",
-  "Goenitz",         "Haohmaru",       "Heidern",
-  "Hinako Shijou",        "Iori Yagami",          "Isla",
-    "Joe Higashi",          "K'",           "Kim Kaphwan",
-  "King",            "King of Dinosaurs",     "Krohnen",
-  "Kukri",         "Kula Diamond",       "Kyo Kusanagi",
-  "Leona Heidern",        "Luong",          "Mai Shiranui",
-  "Mature",          "Maxima",           "Meitenkun",
-  "Najd",            "Nakoruru",     "Omega Rugal",
-  "Orochi Chris",         "Orochi Shermie",       "Orochi Yashiro",
-  "Ralf Jones",        "Ramón",          "Robert Garcia",
-  "Rock Howard",            "Ryo Sakazaki",     "Ryuji Yamazaki",
-  "Shermie",         "Shingo Yabuki",       "Shun’Ei",
-  "Sylvie Paula Paula",            "Terry Bogard",     "Vanessa",
-  "Vice",         "Whip",       "Yashiro Nanakase",
-  "Yuri Sakazaki"
+  "Rock Howard", "Terry Bogard", "Jenet",
+  "Marco Rodrigues", "Preecha", "Hotaru Futaba",
+  "Vox Reaper", "Tizoc", "Kevin Rian",
+  "Billy Kane", "Mai Shiranui", "Kim Dong Hwan",
+  "Gato", "Kain R. Heinlein", "Cristiano Ronaldo",
+  "Salvatore Ganacci", "Andy Bogard", "Ken",
+  "Joe Higashi", "Chun-Li", "Mr. Big",
+  "Kim Jae Hoon", "Nightmare Geese", "Blue Mary",
+  "Wolfgang Krauser", "Mr. Karate", "Kenshiro",
+  "Rick Strowd", "Duck King", "Kim Kaphwan",
+  "Manjiro “Mikey” Sano", "Ken “Draken” Ryuguji"
 ];
 
-const SLOTS_POR_PREGUNTA = 3;
+const SLOTS_POR_JUGADOR = 2;
 // ══════════════════════════════════════════════════════════
 
-let currentUser = null;
-// answers[user][qIndex][slotIndex] = "opción" | ""
-let answers = {};
+const CONFIGURED = SHEETS_URL !== "AQUI_TU_URL";
 
-function getUser(u) {
-  if (!answers[u]) {
-    answers[u] = {};
-    PREGUNTAS.forEach((_, i) => {
-      answers[u][i] = Array(SLOTS_POR_PREGUNTA).fill("");
-    });
-  }
-  return answers[u];
+let teamName = "";
+let registeredCount = 0;
+let registeredTeams = [];
+// players[pi] = { name: "", chars: ["", ""] }
+let players = JUGADORES.map(() => ({ name: "", chars: Array(SLOTS_POR_JUGADOR).fill("") }));
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-// Todas las opciones ya usadas por este usuario en otras preguntas (o en otros slots de la misma)
-function usedGlobally(user, excludeQ, excludeSlot) {
-  const ua = getUser(user);
+// Personajes ya usados en el equipo (excepto el slot indicado)
+function usedInTeam(excludeP, excludeS) {
   const used = [];
-  PREGUNTAS.forEach((_, qi) => {
-    ua[qi].forEach((val, si) => {
-      if (val && !(qi === excludeQ && si === excludeSlot)) used.push(val);
+  players.forEach((p, pi) => {
+    p.chars.forEach((val, si) => {
+      if (val && !(pi === excludeP && si === excludeS)) used.push(val);
     });
   });
   return used;
 }
 
-function startForm() {
+// ── Cupos / Google Sheets ──
+async function fetchStatus() {
+  if (!CONFIGURED) return { count: 0, equipos: [] };
+  const res = await fetch(SHEETS_URL + (SHEETS_URL.includes('?') ? '&' : '?') + 't=' + Date.now());
+  const data = await res.json();
+  return { count: Number(data.count) || 0, equipos: data.equipos || [] };
+}
+
+function renderCupos() {
+  const info = document.getElementById('cupos-info');
+  const btn  = document.getElementById('btn-start');
+  const left = MAX_EQUIPOS - registeredCount;
+  if (left <= 0) {
+    info.textContent = 'Las inscripciones están cerradas: ya se completaron los 8 equipos.';
+    info.style.color = 'var(--error)';
+    btn.disabled = true;
+    btn.style.opacity = '.4';
+    btn.style.cursor = 'not-allowed';
+  } else {
+    info.textContent = `Cupos disponibles: ${left} de ${MAX_EQUIPOS}`;
+    info.style.color = '';
+    btn.disabled = false;
+    btn.style.opacity = '';
+    btn.style.cursor = '';
+  }
+}
+
+async function loadStatus() {
+  try {
+    const s = await fetchStatus();
+    registeredCount = s.count;
+    registeredTeams = s.equipos;
+    renderCupos();
+  } catch (e) {
+    console.warn('No se pudo consultar los cupos:', e);
+    document.getElementById('cupos-info').textContent = 'No se pudo verificar los cupos. Intenta de nuevo.';
+  }
+}
+
+function loginMsg(txt) {
+  const m = document.getElementById('login-msg');
+  m.className = 'field-msg' + (txt ? ' error' : '');
+  m.textContent = txt ? '⚠ ' + txt : '';
+}
+
+async function startForm() {
   const input = document.getElementById('username-input').value.trim();
-  if (!input) { alert('Por favor ingresa tu nombre.'); return; }
-  currentUser = input;
-  document.getElementById('display-name').textContent = currentUser;
-  if (SHEETS_URL === "AQUI_TU_URL") {
+  if (!input) { loginMsg('Por favor ingresa el nombre del equipo.'); return; }
+  loginMsg('');
+
+  const btn = document.getElementById('btn-start');
+  btn.disabled = true;
+  try {
+    const s = await fetchStatus();
+    registeredCount = s.count;
+    registeredTeams = s.equipos;
+  } catch (e) {
+    btn.disabled = false;
+    loginMsg('No se pudo verificar los cupos. Intenta de nuevo.');
+    return;
+  }
+  renderCupos();
+  if (registeredCount >= MAX_EQUIPOS) return;
+
+  if (registeredTeams.some(t => String(t).trim().toLowerCase() === input.toLowerCase())) {
+    loginMsg('Ya existe un equipo inscrito con ese nombre.');
+    return;
+  }
+
+  teamName = input;
+  players = JUGADORES.map(() => ({ name: "", chars: Array(SLOTS_POR_JUGADOR).fill("") }));
+  document.getElementById('display-name').textContent = teamName;
+  if (!CONFIGURED) {
     document.getElementById('config-warning').style.display = 'flex';
   }
+  document.getElementById('submit-msg').textContent = '';
   renderQuestions();
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('form-screen').style.display  = 'block';
 }
 
+// ── Render ──
 function renderQuestions() {
   const container = document.getElementById('questions-container');
   container.innerHTML = '';
-  const ua = getUser(currentUser);
 
-  PREGUNTAS.forEach((q, qi) => {
-    const vals = ua[qi];
-    const complete = vals.every(v => v !== "");
-
+  JUGADORES.forEach((label, pi) => {
+    const p = players[pi];
     const card = document.createElement('div');
-    card.className = 'question-card' + (complete ? ' answered' : '');
-    card.id = `card-${qi}`;
+    card.className = 'question-card';
+    card.id = `card-${pi}`;
 
-    const slots = vals.map((val, si) => {
-      const used = usedGlobally(currentUser, qi, si);
+    const slots = p.chars.map((val, si) => {
+      const used = usedInTeam(pi, si);
       const opts = OPCIONES.map(opt => {
         const disabled = used.includes(opt) && opt !== val;
-        return `<option value="${opt}" ${opt === val ? 'selected':''} ${disabled ? 'disabled':''}>
-          ${opt}${disabled ? ' ✗':''}
-        </option>`;
+        return `<option value="${esc(opt)}" ${opt === val ? 'selected':''} ${disabled ? 'disabled':''}>${esc(opt)}${disabled ? ' ✗':''}</option>`;
       }).join('');
       return `
         <div class="slot-row">
           <div class="slot-label">${si+1}.</div>
           <div class="select-wrap">
-            <select id="sel-${qi}-${si}" onchange="handleChange(${qi},${si},this.value)">
-              <option value="">— Elige opción ${si+1} —</option>
+            <select id="sel-${pi}-${si}" onchange="handleChange(${pi},${si},this.value)">
+              <option value="">— Personaje ${si+1} —</option>
               ${opts}
             </select>
           </div>
         </div>`;
     }).join('');
 
-    const filled = vals.filter(v=>v).length;
     card.innerHTML = `
-      <div class="q-number">Pregunta ${qi+1} de ${PREGUNTAS.length}</div>
-      <div class="q-text">${q}</div>
-      <div class="q-subtitle">Selecciona 3 opciones diferentes</div>
-      <div class="slots">${slots}</div>
-      <div class="slot-counter ${complete?'done':''}" id="counter-${qi}">
-        ${filled} / ${SLOTS_POR_PREGUNTA} seleccionadas
+      <div class="q-number">${label} de ${JUGADORES.length}</div>
+      <div class="q-text">Nombre del ${label.toLowerCase()}</div>
+      <div class="q-subtitle">Elige 2 personajes diferentes (no se pueden repetir dentro del equipo)</div>
+      <div class="slots">
+        <div class="slot-row">
+          <div class="slot-label"></div>
+          <input type="text" id="name-${pi}" placeholder="Nombre del ${label.toLowerCase()}" autocomplete="off"
+                 oninput="handleName(${pi}, this.value)" />
+        </div>
+        ${slots}
       </div>
-      <div class="field-msg ${complete?'success':''}" id="msg-${qi}">
-        ${complete ? '✓ Pregunta completa' : ''}
-      </div>`;
+      <div class="slot-counter" id="counter-${pi}"></div>
+      <div class="field-msg" id="msg-${pi}"></div>`;
     container.appendChild(card);
+    updateCard(pi);
   });
 
   updateProgress();
 }
 
-function handleChange(qi, si, value) {
-  const ua = getUser(currentUser);
+function isPlayerComplete(pi) {
+  const p = players[pi];
+  return p.name.trim() !== "" && p.chars.every(v => v !== "");
+}
 
-  // Chequear duplicado dentro de la misma pregunta
-  const sameQ = ua[qi].filter((v,i) => v && i !== si);
-  if (value && sameQ.includes(value)) {
-    showError(qi, si, `"${value.split('–')[0].trim()}" ya está en esta pregunta.`);
-    document.getElementById(`sel-${qi}-${si}`).value = ua[qi][si] || "";
-    return;
-  }
+function updateCard(pi) {
+  const p = players[pi];
+  const complete = isPlayerComplete(pi);
+  const filled = p.chars.filter(v => v).length;
+  document.getElementById(`card-${pi}`).classList.toggle('answered', complete);
+  const msg = document.getElementById(`msg-${pi}`);
+  msg.className = 'field-msg' + (complete ? ' success' : '');
+  msg.textContent = complete ? '✓ Jugador completo' : '';
+  const counter = document.getElementById(`counter-${pi}`);
+  counter.className = 'slot-counter' + (complete ? ' done' : '');
+  counter.textContent = `${filled} / ${SLOTS_POR_JUGADOR} personajes seleccionados`;
+}
 
-  // Chequear duplicado global (otras preguntas)
-  const globalUsed = usedGlobally(currentUser, qi, si);
-  if (value && globalUsed.includes(value)) {
-    showError(qi, si, `"${value.split('–')[0].trim()}" ya se usó en otra pregunta.`);
-    document.getElementById(`sel-${qi}-${si}`).value = ua[qi][si] || "";
-    return;
-  }
-
-  ua[qi][si] = value;
-  clearError(qi);
-  refreshAllSelects();
+function handleName(pi, value) {
+  players[pi].name = value;
+  updateCard(pi);
   updateProgress();
 }
 
-function showError(qi, si, txt) {
-  const card = document.getElementById(`card-${qi}`);
+function handleChange(pi, si, value) {
+  // Duplicado dentro del equipo
+  if (value && usedInTeam(pi, si).includes(value)) {
+    showError(pi, `"${value}" ya está en tu equipo.`);
+    document.getElementById(`sel-${pi}-${si}`).value = players[pi].chars[si] || "";
+    return;
+  }
+  players[pi].chars[si] = value;
+  refreshAllSelects();
+  players.forEach((_, i) => updateCard(i));
+  updateProgress();
+}
+
+function showError(pi, txt) {
+  const card = document.getElementById(`card-${pi}`);
   card.classList.add('has-error');
   setTimeout(() => card.classList.remove('has-error'), 400);
-  const msg = document.getElementById(`msg-${qi}`);
+  const msg = document.getElementById(`msg-${pi}`);
   msg.className = 'field-msg error';
   msg.textContent = '⚠ ' + txt;
 }
 
-function clearError(qi) {
-  const ua = getUser(currentUser);
-  const vals = ua[qi];
-  const complete = vals.every(v => v !== "");
-  const filled = vals.filter(v=>v).length;
-  const card = document.getElementById(`card-${qi}`);
-  const msg  = document.getElementById(`msg-${qi}`);
-  const counter = document.getElementById(`counter-${qi}`);
-  card.classList.toggle('answered', complete);
-  msg.className = 'field-msg' + (complete ? ' success' : '');
-  msg.textContent = complete ? '✓ Pregunta completa' : '';
-  counter.className = 'slot-counter' + (complete ? ' done' : '');
-  counter.textContent = `${filled} / ${SLOTS_POR_PREGUNTA} seleccionadas`;
-}
-
 function refreshAllSelects() {
-  const ua = getUser(currentUser);
-  PREGUNTAS.forEach((_, qi) => {
-    ua[qi].forEach((val, si) => {
-      const sel = document.getElementById(`sel-${qi}-${si}`);
+  players.forEach((p, pi) => {
+    p.chars.forEach((val, si) => {
+      const sel = document.getElementById(`sel-${pi}-${si}`);
       if (!sel) return;
-      const used = usedGlobally(currentUser, qi, si);
+      const used = usedInTeam(pi, si);
       Array.from(sel.options).forEach(opt => {
         if (!opt.value) return;
         const base = opt.value;
@@ -498,76 +547,121 @@ function refreshAllSelects() {
 }
 
 function updateProgress() {
-  const ua = getUser(currentUser);
-  const complete = PREGUNTAS.filter((_, i) => ua[i].every(v => v !== "")).length;
-  const pct = Math.round((complete / PREGUNTAS.length) * 100);
-  document.getElementById('progress-text').textContent = `${complete} de ${PREGUNTAS.length} completas`;
+  const complete = JUGADORES.filter((_, i) => isPlayerComplete(i)).length;
+  const pct = Math.round((complete / JUGADORES.length) * 100);
+  document.getElementById('progress-text').textContent = `${complete} de ${JUGADORES.length} completas`;
   document.getElementById('progress-pct').textContent  = `${pct}%`;
   document.getElementById('progress-fill').style.width = `${pct}%`;
-  document.getElementById('btn-submit').disabled = (complete < PREGUNTAS.length);
+  document.getElementById('btn-submit').disabled = (complete < JUGADORES.length);
+}
+
+// ── Envío ──
+function submitMsg(txt) {
+  const m = document.getElementById('submit-msg');
+  m.className = 'field-msg' + (txt ? ' error' : '');
+  m.textContent = txt ? '⚠ ' + txt : '';
 }
 
 async function submitForm() {
-  const ua = getUser(currentUser);
-  // Verificar completo
-  for (let i = 0; i < PREGUNTAS.length; i++) {
-    if (ua[i].some(v => !v)) return;
+  if (!JUGADORES.every((_, i) => isPlayerComplete(i))) return;
+  submitMsg('');
+
+  // Validación final de personajes repetidos
+  const all = players.flatMap(p => p.chars);
+  if (new Set(all).size !== all.length) {
+    submitMsg('Tu equipo tiene personajes repetidos.');
+    return;
   }
 
-  // Mostrar overlay
   document.getElementById('sending-overlay').style.display = 'flex';
 
-  // Armar payload
-  const payload = { usuario: currentUser, fecha: new Date().toLocaleString('es-MX') };
-  PREGUNTAS.forEach((q, i) => {
-    ua[i].forEach((val, si) => {
-      payload[`P${i+1}_op${si+1}`] = val;
-    });
-  });
+  const payload = {
+    equipo: teamName,
+    jugador1: players[0].name.trim(),
+    j1_personaje1: players[0].chars[0],
+    j1_personaje2: players[0].chars[1],
+    jugador2: players[1].name.trim(),
+    j2_personaje1: players[1].chars[0],
+    j2_personaje2: players[1].chars[1],
+    fecha: new Date().toLocaleString('es-MX')
+  };
 
-  if (SHEETS_URL !== "AQUI_TU_URL") {
+  let ok = !CONFIGURED;
+  let errorMsg = '';
+
+  if (CONFIGURED) {
     try {
-      await fetch(SHEETS_URL, {
+      // text/plain evita el preflight CORS y permite leer la respuesta del Apps Script
+      const res = await fetch(SHEETS_URL, {
         method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(payload)
       });
-    } catch(e) {
+      const data = await res.json();
+      if (data.ok) {
+        ok = true;
+      } else if (data.error === 'full') {
+        errorMsg = 'Las inscripciones se cerraron: ya se completaron los 8 equipos.';
+      } else if (data.error === 'duplicate') {
+        errorMsg = 'Ya existe un equipo inscrito con ese nombre.';
+      } else {
+        errorMsg = 'No se pudo guardar la inscripción. Intenta de nuevo.';
+      }
+    } catch (e) {
       console.warn('Error al enviar:', e);
+      // Verificar si el registro llegó a pesar del error de red
+      try {
+        const s = await fetchStatus();
+        ok = s.equipos.some(t => String(t).trim().toLowerCase() === teamName.toLowerCase());
+      } catch (_) {}
+      if (!ok) errorMsg = 'No se pudo enviar la inscripción. Revisa tu conexión e intenta de nuevo.';
     }
   }
 
   document.getElementById('sending-overlay').style.display = 'none';
-  showSuccess();
+
+  if (ok) {
+    showSuccess();
+  } else {
+    submitMsg(errorMsg);
+    loadStatus();
+  }
 }
 
 function showSuccess() {
-  const ua = getUser(currentUser);
   document.getElementById('form-screen').style.display = 'none';
   document.getElementById('success-screen').style.display = 'flex';
   document.getElementById('success-msg').textContent =
-    `Gracias, ${currentUser}. Tu inscripción fue enviada correctamente.`;
+    `Gracias. El equipo ${teamName} fue inscrito correctamente.`;
 
   const list = document.getElementById('summary-list');
-  list.innerHTML = PREGUNTAS.map((q, i) => `
+  list.innerHTML = `
     <div class="summary-item">
-      <div class="q-label">P${i+1}: ${q}</div>
+      <div class="q-label">Equipo</div>
+      <div class="a-pills"><span class="pill">${esc(teamName)}</span></div>
+    </div>` + JUGADORES.map((label, i) => `
+    <div class="summary-item">
+      <div class="q-label">${label}: ${esc(players[i].name.trim())}</div>
       <div class="a-pills">
-        ${ua[i].map(v => `<span class="pill">${v}</span>`).join('')}
+        ${players[i].chars.map(v => `<span class="pill">${esc(v)}</span>`).join('')}
       </div>
     </div>`).join('');
 }
 
 function resetAll() {
-  currentUser = null;
+  teamName = "";
   document.getElementById('username-input').value = '';
+  loginMsg('');
   document.getElementById('success-screen').style.display = 'none';
   document.getElementById('login-screen').style.display   = 'flex';
+  document.getElementById('cupos-info').textContent = 'Verificando cupos…';
+  loadStatus();
 }
 
 document.getElementById('username-input')
   .addEventListener('keydown', e => { if (e.key === 'Enter') startForm(); });
+
+loadStatus();
 </script>
 </body>
 </html>
